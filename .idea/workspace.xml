@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5b2781ae-df2f-49b7-80e3-38df3d7b4ba8" name="Changes" comment="Выбор манекена">
+    <list default="true" id="5b2781ae-df2f-49b7-80e3-38df3d7b4ba8" name="Changes" comment="Выбор манекена и загрузка пользовательского фото">
+      <change afterPath="$PROJECT_DIR$/handlers/photo_loading_template.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers/common.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/common.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keyboards/common.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboards/common.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,6 +35,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Python.common.executor&quot;: &quot;Run&quot;,
     &quot;Python.ll.executor&quot;: &quot;Run&quot;,
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
@@ -73,11 +73,20 @@
       <option name="project" value="LOCAL" />
       <updated>1745755942712</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Выбор манекена и загрузка пользовательского фото">
+      <option name="closed" value="true" />
+      <created>1746217491615</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1746217491615</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Выбор манекена" />
-    <option name="LAST_COMMIT_MESSAGE" value="Выбор манекена" />
+    <MESSAGE value="Выбор манекена и загрузка пользовательского фото" />
+    <option name="LAST_COMMIT_MESSAGE" value="Выбор манекена и загрузка пользовательского фото" />
   </component>
 </project>
