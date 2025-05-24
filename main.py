@@ -5,10 +5,12 @@ from aiogram import Bot, Dispatcher
 from handlers.common import pass_dispatcher
 from user_mannequin_choises import UserChoicesDict
 
+from config import *
+
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
 # Объект бота
-bot = Bot(token="7910484171:AAEC-mZQC5_UVW1e7w6JdKHe0tdUCO7HIsA")
+bot = Bot(token=TOKEN)
 # Диспетчер
 dp = Dispatcher()
 

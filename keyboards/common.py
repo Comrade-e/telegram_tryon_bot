@@ -4,7 +4,8 @@ keyboard_start = types.ReplyKeyboardMarkup(
     keyboard=[
         [types.KeyboardButton(text="Загрузить пользовательское фото модели")],
         [types.KeyboardButton(text="Выбрать манекен")],
-        [types.KeyboardButton(text="Загрузить фото одежды")],
+        [types.KeyboardButton(text="Загрузить фото верхней одежды")],
+        [types.KeyboardButton(text="Загрузить фото нижней одежды")],
         [types.KeyboardButton(text="Купить кредиты")],
         [types.KeyboardButton(text="Генерировать")]
     ],

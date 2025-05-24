@@ -1,30 +1,27 @@
-import hashlib
-
 import aiogram
 import os
-import hmac
-from hashkey import HASH_KEY
+
+from hashing import get_user_hash, get_photo_hash
 from aiogram.filters import Command
 
 from keyboards.common import *
 from user_mannequin_choises import UserChoicesDict
+from handlers.photo_loading_template import PhotoLoadingHandlerTemplater
+
+from aiogram.fsm.state import State, StatesGroup
 
 
 image_extensions = ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp')
 
-def get_user_hash(userid: int):
-    return hmac.new(HASH_KEY, str(userid).encode('utf-8'), hashlib.sha256).hexdigest()
 
-def get_photo_hash(photo_name: str):
-    return hmac.new(HASH_KEY, photo_name.encode('utf-8'), digestmod=lambda: hashlib.blake2b(digest_size=8)).hexdigest()
+class PhotoWaitingStates(StatesGroup):
+    wait_for_model = State()
+    wait_for_top = State()
+    wait_for_bottom = State()
+
+
 
 def pass_dispatcher(dp: aiogram.Dispatcher):
-
-    global WAIT_FOR_MODEL_PHOTO
-    WAIT_FOR_MODEL_PHOTO = False
-
-    global WAIT_FOR_CLOTHING_PHOTO
-    WAIT_FOR_CLOTHING_PHOTO = False
 
     @dp.message(Command("start"))
     async def cmd_start(message: types.Message):
@@ -58,71 +55,21 @@ def pass_dispatcher(dp: aiogram.Dispatcher):
         user_hash = get_user_hash(callback_query.from_user.id)
         UserChoicesDict().DICT[user_hash] = res
         await callback_query.answer()
+        await callback_query.message.answer(f'Фото выбрано.')
 
-    @dp.message(lambda msg: msg.text == 'Загрузить пользовательское фото модели')
-    async def ready_for_photo(msg: types.Message):
-        global WAIT_FOR_MODEL_PHOTO
-        WAIT_FOR_MODEL_PHOTO = True
-        await msg.answer('Загрузите одно фото и отправьте в чат')
+    PhotoLoadingHandlerTemplater('Загрузить пользовательское фото модели', 'models',
+                                 PhotoWaitingStates.wait_for_model, PhotoWaitingStates.wait_for_model).create_all(dp)
 
-    @dp.message(lambda msg: WAIT_FOR_MODEL_PHOTO)
-    async def load_custom_photo(msg: types.Message):
-        global WAIT_FOR_MODEL_PHOTO
-        WAIT_FOR_MODEL_PHOTO = False
+    PhotoLoadingHandlerTemplater('Загрузить фото нижней одежды', 'top_garments',
+                                 PhotoWaitingStates.wait_for_top, PhotoWaitingStates.wait_for_top).create_all(dp)
 
-        if not os.path.exists('user_photos'):
-            os.makedirs('user_photos')
-        user_hash = get_user_hash(msg.from_user.id)
-        user_dir_path = os.path.join('user_photos', os.path.join(user_hash, 'models'))
-
-        if not os.path.exists(user_dir_path):
-            os.makedirs(user_dir_path)
-
-        try:
-            bot = msg.bot
-            photo = msg.photo[-1]
-            file_id = photo.file_id
-            file_obj = await bot.get_file(file_id)
-            file_path = file_obj.file_path
-            await bot.download_file(file_path, os.path.join(user_dir_path,
-                                                            f'{get_photo_hash(file_id)}.jpg'))
+    PhotoLoadingHandlerTemplater('Загрузить фото верхней одежды', 'bottom_garments',
+                                 PhotoWaitingStates.wait_for_bottom, PhotoWaitingStates.wait_for_bottom).create_all(dp)
 
 
-            await msg.reply('Фото загружено')
-        except TypeError:
-            await msg.reply(f'Загрузите фото')
-
-    @dp.message(lambda msg: msg.text == 'Загрузить фото одежды')
-    async def ready_for_clothing_photo(msg: types.Message):
-        global WAIT_FOR_CLOTHING_PHOTO
-        WAIT_FOR_CLOTHING_PHOTO = True
-        await msg.answer('Загрузите одно фото и отправьте в чат')
-
-    @dp.message(lambda msg: WAIT_FOR_CLOTHING_PHOTO)
-    async def load_custom_clothing_photo(msg: types.Message):
-        global WAIT_FOR_CLOTHING_PHOTO
-        WAIT_FOR_CLOTHING_PHOTO = False
-        if not os.path.exists('user_photos'):
-            os.makedirs('user_photos')
-        user_hash = get_user_hash(msg.from_user.id)
-        user_dir_path = os.path.join('user_photos', os.path.join(user_hash, 'clothes'))
-
-        if not os.path.exists(user_dir_path):
-            os.makedirs(user_dir_path)
-
-        try:
-            bot = msg.bot
-            photo = msg.photo[-1]
-            file_id = photo.file_id
-            file_obj = await bot.get_file(file_id)
-            file_path = file_obj.file_path
-            await bot.download_file(file_path, os.path.join(user_dir_path,
-                                                            f'{get_photo_hash(file_id)}.jpg'))
 
 
-            await msg.reply('Фото загружено')
-        except TypeError:
-            await msg.reply(f'Загрузите фото')
+
 
 
 
