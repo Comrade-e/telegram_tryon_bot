@@ -3,7 +3,6 @@ import logging
 from aiogram import Bot, Dispatcher
 
 from handlers.common import pass_dispatcher
-from user_mannequin_choises import UserChoicesDict
 
 from config import *
 
@@ -18,7 +17,6 @@ dp = pass_dispatcher(dp)
 
 # Запуск процесса поллинга новых апдейтов
 async def main():
-    UserChoicesDict()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
