@@ -3,7 +3,7 @@ import os
 from aiogram import Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 from handlers.common import ChoosingStates, image_extensions
 from hashing import get_user_hash
@@ -14,10 +14,12 @@ from keyboards.choose_confirms import *
 def register_choosing_stage_changer(dp: Dispatcher, trigger_state: State, state_data_key: str, message_when_confirm: str,
                                     next_state: State):
     @dp.message(trigger_state)
-    async def universal_handler(callback_query: CallbackQuery, state: FSMContext):
-        msg = callback_query.message
+    async def universal_handler(msg: Message, state: FSMContext):
         user_hash = get_user_hash(msg.from_user.id)
         user_dir = f'user_photos/{user_hash}'
+        if not os.path.exists(user_dir):
+            await msg.answer("Ошибка: ваша папка не найдена")
+            return
         folders = [d for d in os.listdir(user_dir) if os.path.isdir(os.path.join(user_dir, d))]
         if msg.text == "Назад":
             await msg.answer("Главное меню:", reply_markup=keyboard_start)
