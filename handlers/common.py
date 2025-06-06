@@ -1,12 +1,15 @@
 import logging
 
 import aiogram
-import os
 
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import CallbackQuery
 
+from ai_generation_contraptions import *
+from file_opening_contraptions import *
+from handlers.choosing_state_changer import register_choosing_stage_changer
 from hashing import get_user_hash, get_photo_hash
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import Command
 
 from keyboards.common import *
 from keyboards.choose_confirms import *
@@ -16,6 +19,8 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 
 image_extensions = ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp')
+
+BASE_STATE = State()
 
 
 class PhotoFolders(StatesGroup):
@@ -29,73 +34,90 @@ class ChoosingStates(StatesGroup):
     choosing_model = State()
     choosing_top = State()
     choosing_bottom = State()
+    pre_confirm = State()
+    final_confirm = State()
+
+
+class GenerationStates(StatesGroup):
+    on_generation = State()
+    exit_generation = State()
 
 
 def pass_dispatcher(dp: aiogram.Dispatcher):
     @dp.message(Command("start"))
-    async def cmd_start(message: types.Message):
+    async def cmd_start(message: types.Message, state: FSMContext):
         await message.answer(
             "<текст приветствия>",
             reply_markup=keyboard_start
         )
+        await state.set_state(BASE_STATE)
 
-    @dp.message(lambda msg: msg.text in ("Мои фото", 'Выбрать одежду для примерки'))
+    @dp.message(BASE_STATE)
     async def folder_interaction(msg: types.Message, state: FSMContext):
-        user_hash = get_user_hash(msg.from_user.id)
-        user_dir = f'user_photos/{user_hash}'
-        if not os.path.exists(user_dir):
-            os.makedirs(user_dir)
-        folders = [d for d in os.listdir(user_dir) if os.path.isdir(os.path.join(user_dir, d))]
-        if folders:
-            await msg.answer("Выберите фото модели:",
-                             reply_markup=see_folders_keyboard(folders) if msg.text == "Мои фото"
-                             else see_folders_to_choose_keyboard(folders))
-            await state.set_state(
-                PhotoFolders.choosing_folder if msg.text == "Мои фото" else ChoosingStates.choosing_model)
+        if msg.text in ("Мои фото", 'Выбрать одежду для примерки'):
+            user_hash = get_user_hash(msg.from_user.id)
+            user_dir = f'user_photos/{user_hash}'
+            if not os.path.exists(user_dir):
+                os.makedirs(user_dir)
+            folders = [d for d in os.listdir(user_dir) if os.path.isdir(os.path.join(user_dir, d))]
+            if folders:
+                await msg.answer("Выберите папку:" if msg.text == "Мои фото" else "Выберите фото модели из папок",
+                                 reply_markup=see_folders_keyboard(folders) if msg.text == "Мои фото"
+                                 else see_folders_to_choose_keyboard(folders))
+                await state.set_state(
+                    PhotoFolders.choosing_folder if msg.text == "Мои фото" else ChoosingStates.choosing_model)
 
-        else:
-            await msg.answer("У вас пока нету папок!", reply_markup=create_folders_keyboard())
-            await state.set_state(PhotoFolders.choosing_folder)
+            else:
+                await msg.answer("У вас пока нету папок!", reply_markup=create_folders_keyboard())
+                await state.set_state(PhotoFolders.choosing_folder)
 
-    @dp.message(state=StateFilter(PhotoFolders.choosing_folder))
+    @dp.message(PhotoFolders.choosing_folder)
     async def handle_folder_choice(msg: types.Message, state: FSMContext):
         user_hash = get_user_hash(msg.from_user.id)
         user_dir = f'user_photos/{user_hash}'
         folders = [d for d in os.listdir(user_dir) if os.path.isdir(os.path.join(user_dir, d))]
-        if (msg.text == "Создать новую папку") and (state == PhotoFolders.choosing_folder):
-            await msg.answer("Введите название новой папки:")
-            await state.set_state(PhotoFolders.creating_folder)
-            return
-        if msg.text == "Назад":
-            await msg.answer("Главное меню:", reply_markup=keyboard_start)
-            await state.clear()
-            return
         if msg.text in folders:
+            await state.set_state(PhotoFolders.folder_actions)
             await state.update_data(selected_folder=msg.text)
-            folder_path = os.path.join(user_dir, msg.text)
-            files = [f for f in os.listdir(folder_path) if f.lower().endswith(image_extensions)]
-            for f in files:
-                await msg.answer_photo(photo=os.path.join(folder_path, f))
+            await msg.answer(f'Папка "{msg.text}". Выберите действие',
+                             reply_markup=create_folder_actions_keyboard(msg.text))
+            # folder_path = os.path.join(user_dir, msg.text)
+            # files = [f for f in os.listdir(folder_path) if f.lower().endswith(image_extensions)]
+            # for f in files:
+            # await msg.answer_photo(FSInputFile(os.path.join(folder_path, f)))
         else:
-            await msg.answer("Папка не найдена. Пожалуйста, выберите из списка.",
-                             reply_markup=see_folders_keyboard(folders))
+            if (msg.text == "Создать новую папку") and (await state.get_state() == PhotoFolders.choosing_folder.state):
+                await msg.answer("Введите название новой папки:")
+                await state.set_state(PhotoFolders.creating_folder)
+                return
+            elif msg.text == "Назад":
+                await msg.answer("Главное меню:", reply_markup=keyboard_start)
+                await state.set_state(BASE_STATE)
+            else:
+                await msg.answer("Папка не найдена. Пожалуйста, выберите из списка.",
+                                 reply_markup=see_folders_keyboard(folders))
+            return
 
     @dp.message(PhotoFolders.creating_folder)
     async def create_new_folder(msg: types.Message, state: FSMContext):
         user_hash = get_user_hash(msg.from_user.id)
         user_dir = f'user_photos/{user_hash}'
-        new_folder = msg.text.strip()
-        if not new_folder or any(c in new_folder for c in '/\\'):
-            await msg.answer("Недопустимое имя папки. Попробуйте другое.")
-            return
-        new_folder_path = os.path.join(user_dir, new_folder)
-        if os.path.exists(new_folder_path):
-            await msg.answer("Папка с таким именем уже существует.")
-            return
-        os.makedirs(new_folder_path)
-        folders = [d for d in os.listdir(user_dir) if os.path.isdir(os.path.join(user_dir, d))]
-        await msg.answer("Папка создана! Выберите папку:", reply_markup=see_folders_keyboard(folders))
-        await state.set_state(PhotoFolders.choosing_folder)
+        if msg.text == "Назад":
+            await state.set_state(PhotoFolders.choosing_folder)
+            await msg.answer("Главное меню", reply_markup=see_folders_keyboard(get_folders(user_dir)))
+        else:
+            new_folder = msg.text.strip()
+            if not new_folder or any(c in new_folder for c in '/\\') or len(new_folder) > 16:
+                await msg.answer("Недопустимое или слишком длинное имя папки. Попробуйте другое.")
+                return
+            new_folder_path = os.path.join(user_dir, new_folder)
+            if os.path.exists(new_folder_path):
+                await msg.answer("Папка с таким именем уже существует.")
+                return
+            os.makedirs(new_folder_path)
+            folders = [d for d in os.listdir(user_dir) if os.path.isdir(os.path.join(user_dir, d))]
+            await msg.answer("Папка создана! Выберите папку:", reply_markup=see_folders_keyboard(folders))
+            await state.set_state(PhotoFolders.choosing_folder)
 
     @dp.message(PhotoFolders.folder_actions)
     async def handle_folder_actions(msg: types.Message, state: FSMContext):
@@ -110,7 +132,7 @@ def pass_dispatcher(dp: aiogram.Dispatcher):
                 await msg.answer("В папке нет фотографий.")
             else:
                 for file in files:
-                    await msg.answer_photo(photo=os.path.join(folder_path, file))
+                    await msg.answer_photo(FSInputFile(os.path.join(folder_path, file)))
             await msg.answer(f"Папка '{folder}'. Выберите действие:",
                              reply_markup=create_folder_actions_keyboard(folder))
         elif msg.text == f"Загрузить фото в '{folder}'":
@@ -121,7 +143,7 @@ def pass_dispatcher(dp: aiogram.Dispatcher):
             await msg.answer("Выберите папку:", reply_markup=see_folders_keyboard(folders))
             await state.set_state(PhotoFolders.choosing_folder)
         else:
-            await msg.answer("Пожалуйста, выберите действие с помощью кнопок.",
+            await msg.answer("Пожалуйста, выберите действие с помощью кнопок",
                              reply_markup=create_folder_actions_keyboard(folder))
 
     @dp.message(PhotoFolders.waiting_for_photo)
@@ -132,58 +154,76 @@ def pass_dispatcher(dp: aiogram.Dispatcher):
         user_dir = os.path.join('user_photos', user_hash)
         folder_path = os.path.join(user_dir, folder)
 
-        # Создаём все необходимые директории
-        os.makedirs(folder_path, exist_ok=True)  # Критически важная строка!
-
         if not msg.photo:
             await msg.answer("Пожалуйста, отправьте изображение.")
             return
-
-        try:
-            # Берём фото максимального качества
-            photo = msg.photo[-1]
-
-            # Получаем информацию о файле
-            file = await msg.bot.get_file(photo.file_id)
-            # Добавьте отладочный вывод
-            print(f"File ID: {photo.file_id}")
-            print(f"File unique ID: {photo.file_unique_id}")  # Для долгосрочного хранения
-            print(file.file_path)
-
-            # Проверяем полученный file_path
-            if not file.file_path:
-                await msg.answer("Ошибка: неверный идентификатор файла.")
-                return
-
-            # Проверяем расширение файла
-            ext = os.path.splitext(file.file_path)[1].lower()
-            if ext not in {'.jpg', '.jpeg', '.png'}:  # Явное указание разрешённых расширений
-                await msg.answer("Разрешены только JPG/PNG изображения.")
-                return
-
-            # Генерируем уникальное имя файла
-            file_name = f"{get_photo_hash(str(photo.file_id))}{ext}"
-            dest = os.path.join(folder_path, file_name)
-
-            # Скачивание с обработкой ошибок
-            try:
-                await msg.bot.download_file(file.file_path, destination=dest)
-            except TelegramBadRequest as e:
-                await msg.answer(f"Ошибка Telegram: {e.message}")
-                return
-            except Exception as e:
-                await msg.answer(f"Ошибка скачивания: {str(e)}")
-                return
-
-            await msg.answer("✅ Фото успешно загружено!")
-
-        except Exception as e:
-            logging.error(f"Critical error: {str(e)}")
-            await msg.answer("⚠️ Произошла внутренняя ошибка. Попробуйте ещё раз.")
+        await save_photo(msg, folder_path)
 
         # Обновление состояния
         await msg.answer(f"Папка '{folder}'. Выберите действие:",
                          reply_markup=create_folder_actions_keyboard(folder))
         await state.set_state(PhotoFolders.folder_actions)
+
+    @dp.message(ChoosingStates.pre_confirm)
+    async def pre_generation_check(msg: types.Message, state: FSMContext):
+        data = await state.get_data()
+        model = data.get("model")
+        top = data.get("top")
+        bottom = data.get("bottom")
+        group = create_photo_media_group([model, top, bottom], ["Модель", "Верх", "Низ"])
+        await msg.bot.send_media_group(
+            chat_id=msg.chat.id,
+            media=group)
+        await state.set_state(ChoosingStates.final_confirm)
+        await msg.answer("Отправить на генерацию", reply_markup=final_keyboard)
+
+    @dp.message(ChoosingStates.final_confirm)
+    async def send_for_generation(msg: types.Message, state: FSMContext):
+        if msg.text == "Отмена":
+            await msg.answer("Главное меню:", reply_markup=keyboard_start)
+            await state.set_state(BASE_STATE)
+        elif msg.text == "Сгенерировать":
+            data = await state.get_data()
+            model = data.get("chosen_model")
+            top = data.get("chosen_top")
+            bottom = data.get("chosen_bottom")
+            await msg.answer("Фото отправлено на генерацию")
+            await state.set_state(GenerationStates.on_generation)
+            await handle_generation(msg, *(model, top, bottom))
+            await state.set_state(GenerationStates.exit_generation)
+
+    @dp.message(GenerationStates.on_generation)
+    async def freeze_interaction_on_generation(msg: types.Message):
+        await msg.answer("Генерация...")
+
+    @dp.message(GenerationStates.exit_generation)
+    async def exit_generation(msg: types.Message, state: FSMContext):
+        if msg.text == "Вернуться в меню":
+            await msg.reply("Меню", reply_markup=keyboard_start)
+            await state.set_state(BASE_STATE)
+
+    @dp.callback_query(GenerationStates.exit_generation)
+    async def save_generated(callback_query: CallbackQuery, state: FSMContext):
+        if callback_query.data == "save":
+            folder = "Сгенерированные"
+            user_hash = get_user_hash(callback_query.from_user.id)
+            user_dir = os.path.join('user_photos', user_hash)
+            folder_path = os.path.join(user_dir, folder)
+            await save_photo(callback_query.message, folder_path)
+            await callback_query.answer("Фото сохранено")
+            await callback_query.message.answer("Меню", reply_markup=keyboard_start)
+            await state.set_state(BASE_STATE)
+
+    register_choosing_stage_changer(dp, ChoosingStates.choosing_model, "model",
+                                    "Фото модели выбрано. Выберите фото верхней одежды", ChoosingStates.choosing_top)
+
+    register_choosing_stage_changer(dp, ChoosingStates.choosing_top, "top",
+                                    "Фото верхней одежды выбрано. Выберите фото нижней одежды",
+                                    ChoosingStates.choosing_bottom)
+
+    register_choosing_stage_changer(dp, ChoosingStates.choosing_bottom, "bottom",
+                                    "Фото нижней одежды выбрано. Нажмите, чтобы подтвердить",
+                                    ChoosingStates.pre_confirm,
+                                    use_final_keyboard=True)
 
     return dp
