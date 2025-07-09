@@ -5,15 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5b2781ae-df2f-49b7-80e3-38df3d7b4ba8" name="Changes" comment="первое нечто стабильное">
-      <change afterPath="$PROJECT_DIR$/ai_generation_contraptions.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dummy.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/file_opening_contraptions.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/choosing_state_changer.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/choosing_state_changer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/common.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/common.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hashing.py" beforeDir="false" afterPath="$PROJECT_DIR$/hashing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keyboards/choose_confirms.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboards/choose_confirms.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keyboards/common.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboards/common.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,17 +37,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.common.executor&quot;: &quot;Run&quot;,
-    &quot;Python.ll.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;cef6dc20&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/IT/Python/tryon-bot/example_photos&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.common.executor": "Run",
+    "Python.ll.executor": "Run",
+    "Python.main.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "D:/IT/Python/tryon-bot/example_photos"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\IT\Python\tryon-bot\example_photos" />
@@ -117,7 +109,15 @@
       <option name="project" value="LOCAL" />
       <updated>1748859387848</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="первое нечто стабильное">
+      <option name="closed" value="true" />
+      <created>1749222999918</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1749222999918</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
