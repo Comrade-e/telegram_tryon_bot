@@ -1,2 +1,3 @@
 This repository contains unfinished Telegram bot I developed for some person. It can save clothes and human photos you've sent, such that you can chech in any moment and supposed to use an AI generation to make a human with clothes on image. 
+
 Этот репозиторий содержит незавершённый Telegram-бот, который я разработал для одного человека. Он может сохранять фотографии одежды и людей, которые вы отправили так, чтобы вы могли проверить её в любой момент, и, как предполагалось, с помощью искусственного интеллекта должен будет создавать изображение человека в одежде.
